@@ -206,21 +206,21 @@ export function SubscriptionTrackerClient() {
           <CardTitle className="text-xl text-zinc-100">subscriptions</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-4 pt-8 pb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 justify-between gap-6 sm:gap-4 pt-8 pb-6 sm:pb-10">
             <div>
               <p className="text-sm text-zinc-400">Monthly Recurring</p>
-              <p className="text-3xl text-zinc-100">${totals.monthly.toFixed(2)}</p>
+              <p className="text-2xl sm:text-3xl text-zinc-100">${totals.monthly.toFixed(2)}</p>
             </div>
             <div>
               <p className="text-sm text-zinc-400">Yearly Recurring</p>
-              <p className="text-3xl text-zinc-100">${totals.yearly.toFixed(2)}</p>
+              <p className="text-2xl sm:text-3xl text-zinc-100">${totals.yearly.toFixed(2)}</p>
             </div>
-            <div>
+            <div className="col-span-2 sm:col-span-1">
               <p className="text-sm text-zinc-400">Annual Total</p>
-              <p className="text-3xl text-zinc-100">${annualTotal.toFixed(2)}</p>
+              <p className="text-2xl sm:text-3xl text-zinc-100">${annualTotal.toFixed(2)}</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 overflow-x-auto py-4 mb-4 border-y border-zinc-800">
+          <div className="flex flex-wrap gap-2 overflow-x-auto py-3 sm:py-4 mb-3 sm:mb-4 border-y border-zinc-800">
             {accounts.map((account) => (
               <div
                 key={account.id}
@@ -268,13 +268,12 @@ export function SubscriptionTrackerClient() {
               </Button>
             )}
           </div>
-          <div className="space-y-2 overflow-y-auto flex-1 pr-2 pb-4">
+          <div className="space-y-2 overflow-y-auto flex-1 pr-2 pb-4 -mt-1 sm:mt-0">
             {subscriptions.map((sub) => (
               <div
                 key={sub.id}
-                className={`group flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 border-b border-zinc-800 transition-opacity gap-2 ${
-                  sub.status === 'expiring' ? 'opacity-50' : ''
-                }`}
+                className={`group flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 border-b border-zinc-800 transition-opacity gap-2 ${sub.status === 'expiring' ? 'opacity-50' : ''
+                  }`}
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -290,11 +289,10 @@ export function SubscriptionTrackerClient() {
                     </span>
                     <button
                       onClick={() => toggleStatus(sub)}
-                      className={`text-xs px-2 py-1 rounded-full transition-colors ${
-                        sub.status === 'active' 
-                          ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' 
+                      className={`text-xs px-2 py-1 rounded-full transition-colors ${sub.status === 'active'
+                          ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50'
                           : 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50'
-                      }`}
+                        }`}
                     >
                       {sub.status}
                     </button>
