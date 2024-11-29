@@ -14,12 +14,18 @@ import {
 } from "@/components/ui/select"
 import { supabase } from '@/lib/supabase'
 
+type Account = {
+  id: string
+  name: string
+}
+
 type Subscription = {
   id: number
   name: string
   price: number
   billing_type: 'monthly' | 'yearly'
   status: 'active' | 'expiring'
+  account: string
 }
 
 export function SubscriptionTrackerClient() {
@@ -28,18 +34,42 @@ export function SubscriptionTrackerClient() {
     name: '',
     price: '',
     billing_type: 'monthly',
-    status: 'active' as 'active' | 'expiring'
+    status: 'active' as 'active' | 'expiring',
+    account: ''
   })
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [isAddingAccount, setIsAddingAccount] = useState(false)
+  const [newAccountName, setNewAccountName] = useState('')
 
   useEffect(() => {
+    fetchAccounts()
     fetchSubscriptions()
   }, [])
+
+  async function fetchAccounts() {
+    const { data, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .order('name')
+
+    if (error) {
+      console.error('Error fetching accounts:', error)
+    } else {
+      setAccounts(data || [])
+    }
+  }
 
   async function fetchSubscriptions() {
     const { data, error } = await supabase
       .from('subscriptions')
-      .select('*')
+      .select(`
+        *,
+        accounts (
+          id,
+          name
+        )
+      `)
       .order('status', { ascending: false })
       .order('billing_type')
       .order('name')
@@ -64,7 +94,7 @@ export function SubscriptionTrackerClient() {
   const annualTotal = (totals.monthly * 12) + totals.yearly
 
   const handleAddSubscription = async () => {
-    if (newSubscription.name && newSubscription.price) {
+    if (newSubscription.name && newSubscription.price && newSubscription.account) {
       const { error } = await supabase
         .from('subscriptions')
         .insert([
@@ -72,14 +102,21 @@ export function SubscriptionTrackerClient() {
             name: newSubscription.name,
             price: parseFloat(newSubscription.price),
             billing_type: newSubscription.billing_type,
-            status: newSubscription.status
+            status: newSubscription.status,
+            account: newSubscription.account
           }
         ])
 
       if (error) {
         console.error('Error adding subscription:', error)
       } else {
-        setNewSubscription({ name: '', price: '', billing_type: 'monthly', status: 'active' })
+        setNewSubscription({
+          name: '',
+          price: '',
+          billing_type: 'monthly',
+          status: 'active',
+          account: ''
+        })
         setIsAdding(false)
         fetchSubscriptions()
       }
@@ -106,7 +143,7 @@ export function SubscriptionTrackerClient() {
 
   const cancelAdd = () => {
     setIsAdding(false)
-    setNewSubscription({ name: '', price: '', billing_type: 'monthly', status: 'active' })
+    setNewSubscription({ name: '', price: '', billing_type: 'monthly', status: 'active', account: '' })
   }
 
   const handleDelete = async (id: number) => {
@@ -119,6 +156,46 @@ export function SubscriptionTrackerClient() {
       console.error('Error deleting subscription:', error)
     } else {
       setSubscriptions(subscriptions.filter(sub => sub.id !== id))
+    }
+  }
+
+  const handleAddAccount = async () => {
+    if (!newAccountName.trim()) return
+
+    const { data, error } = await supabase
+      .from('accounts')
+      .insert([{ name: newAccountName }])
+      .select()
+
+    if (error) {
+      console.error('Error adding account:', error)
+    } else {
+      setAccounts([...accounts, data[0]])
+      setNewAccountName('')
+      setIsAddingAccount(false)
+    }
+  }
+
+  const cycleAccountForSubscription = async (subscription: Subscription) => {
+    if (accounts.length === 0) return
+
+    const currentIndex = accounts.findIndex(a => a.id === subscription.account)
+    const nextIndex = (currentIndex + 1) % accounts.length
+    const nextAccount = accounts[nextIndex]
+
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({ account: nextAccount.id })
+      .eq('id', subscription.id)
+
+    if (error) {
+      console.error('Error updating subscription account:', error)
+    } else {
+      setSubscriptions(subscriptions.map(sub =>
+        sub.id === subscription.id
+          ? { ...sub, account: nextAccount.id }
+          : sub
+      ))
     }
   }
 
@@ -143,6 +220,54 @@ export function SubscriptionTrackerClient() {
               <p className="text-3xl text-zinc-100">${annualTotal.toFixed(2)}</p>
             </div>
           </div>
+          <div className="flex flex-wrap gap-2 overflow-x-auto py-4 mb-4 border-y border-zinc-800">
+            {accounts.map((account) => (
+              <div
+                key={account.id}
+                className="flex-shrink-0 px-3 py-1 rounded-full bg-zinc-800 text-zinc-200 text-sm"
+              >
+                {account.name}
+              </div>
+            ))}
+            {isAddingAccount ? (
+              <div className="flex gap-2 items-center">
+                <Input
+                  placeholder="Account name"
+                  value={newAccountName}
+                  onChange={(e) => setNewAccountName(e.target.value)}
+                  className="h-7 px-2 py-1 bg-zinc-900 border-zinc-700 text-zinc-100 min-w-[120px]"
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={handleAddAccount}
+                  className="h-7 w-7 bg-zinc-800 hover:bg-zinc-700"
+                  disabled={!newAccountName.trim()}
+                >
+                  <Check className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsAddingAccount(false)
+                    setNewAccountName('')
+                  }}
+                  className="h-7 w-7 bg-zinc-800 hover:bg-zinc-700"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                onClick={() => setIsAddingAccount(true)}
+                className="h-7 px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-sm"
+              >
+                Add Account
+              </Button>
+            )}
+          </div>
           <div className="space-y-2 overflow-y-auto flex-1 pr-2 pb-4">
             {subscriptions.map((sub) => (
               <div
@@ -154,6 +279,12 @@ export function SubscriptionTrackerClient() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-zinc-100">{sub.name}</p>
+                    <button
+                      onClick={() => cycleAccountForSubscription(sub)}
+                      className="text-xs px-2 py-1 rounded-full bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition-colors"
+                    >
+                      {accounts.find(a => a.id === sub.account)?.name || 'No account'}
+                    </button>
                     <span className="text-xs px-2 py-1 rounded-full bg-zinc-800 text-zinc-400">
                       {sub.billing_type}
                     </span>
@@ -233,13 +364,31 @@ export function SubscriptionTrackerClient() {
                     <SelectItem value="expiring">Expiring</SelectItem>
                   </SelectContent>
                 </Select>
+                <Select
+                  value={newSubscription.account}
+                  onValueChange={(value) => setNewSubscription({
+                    ...newSubscription,
+                    account: value
+                  })}
+                >
+                  <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100 w-full sm:w-[120px]">
+                    <SelectValue placeholder="Account" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700 text-zinc-100">
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <div className="flex gap-2 justify-end">
                   <Button
                     size="icon"
                     variant="ghost"
                     onClick={handleAddSubscription}
                     className="h-8 w-8 bg-zinc-800 hover:bg-zinc-700"
-                    disabled={!newSubscription.name || !newSubscription.price}
+                    disabled={!newSubscription.name || !newSubscription.price || !newSubscription.account}
                   >
                     <Check className="h-4 w-4" />
                   </Button>
