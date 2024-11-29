@@ -116,13 +116,13 @@ export function SubscriptionTrackerClient() {
   }
 
   return (
-    <div className="h-screen bg-black flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl mx-auto bg-zinc-950 text-zinc-200 border-zinc-800 h-[800px] flex flex-col">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl mx-auto bg-zinc-950 text-zinc-200 border-zinc-800 h-[90vh] max-h-[800px] flex flex-col">
         <CardHeader className="border-b border-zinc-800">
           <CardTitle className="text-xl text-zinc-100">subscriptions</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex justify-between pt-8 pb-10">
+          <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-4 pt-8 pb-10">
             <div>
               <p className="text-sm text-zinc-400">Monthly Recurring</p>
               <p className="text-3xl text-zinc-100">${totals.monthly.toFixed(2)}</p>
@@ -140,12 +140,12 @@ export function SubscriptionTrackerClient() {
             {subscriptions.map((sub) => (
               <div
                 key={sub.id}
-                className={`group flex justify-between items-center py-3 border-b border-zinc-800 transition-opacity ${
+                className={`group flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 border-b border-zinc-800 transition-opacity gap-2 ${
                   sub.status === 'expiring' ? 'opacity-50' : ''
                 }`}
               >
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <p className="text-zinc-100">{sub.name}</p>
                     <span className="text-xs px-2 py-1 rounded-full bg-zinc-800 text-zinc-400">
                       {sub.billing_type}
@@ -162,11 +162,11 @@ export function SubscriptionTrackerClient() {
                     </button>
                   </div>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center w-full sm:w-auto justify-between sm:justify-start">
                   <p className="text-zinc-100 transition-[margin] duration-200 group-hover:mr-2">
                     ${sub.price.toFixed(2)}
                   </p>
-                  <div className="w-0 group-hover:w-8 overflow-hidden transition-[width] duration-200">
+                  <div className="sm:w-0 sm:group-hover:w-8 overflow-hidden transition-[width] duration-200">
                     <Button
                       size="icon"
                       variant="ghost"
@@ -182,19 +182,19 @@ export function SubscriptionTrackerClient() {
           </div>
           <div className="pt-4 mt-auto">
             {isAdding ? (
-              <div className="flex justify-between items-center gap-2 py-2">
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 py-2">
                 <Input
                   placeholder="Name"
                   value={newSubscription.name}
                   onChange={(e) => setNewSubscription({ ...newSubscription, name: e.target.value })}
-                  className="bg-zinc-900 border-zinc-700 text-zinc-100 w-[200px]"
+                  className="bg-zinc-900 border-zinc-700 text-zinc-100 flex-1 min-w-[120px]"
                 />
                 <Input
                   type="number"
                   placeholder="Price"
                   value={newSubscription.price}
                   onChange={(e) => setNewSubscription({ ...newSubscription, price: e.target.value })}
-                  className="bg-zinc-900 border-zinc-700 text-zinc-100 w-[120px]"
+                  className="bg-zinc-900 border-zinc-700 text-zinc-100 w-full sm:w-[120px]"
                 />
                 <select
                   value={newSubscription.billing_type}
@@ -202,7 +202,7 @@ export function SubscriptionTrackerClient() {
                     ...newSubscription,
                     billing_type: e.target.value as 'monthly' | 'yearly'
                   })}
-                  className="bg-zinc-900 border-zinc-700 text-zinc-100 rounded-md p-2 w-[120px]"
+                  className="bg-zinc-900 border-zinc-700 text-zinc-100 rounded-md p-2 w-full sm:w-[120px]"
                 >
                   <option value="monthly">Monthly</option>
                   <option value="yearly">Yearly</option>
@@ -213,12 +213,12 @@ export function SubscriptionTrackerClient() {
                     ...newSubscription,
                     status: e.target.value as 'active' | 'expiring'
                   })}
-                  className="bg-zinc-900 border-zinc-700 text-zinc-100 rounded-md p-2 w-[120px]"
+                  className="bg-zinc-900 border-zinc-700 text-zinc-100 rounded-md p-2 w-full sm:w-[120px]"
                 >
                   <option value="active">Active</option>
                   <option value="expiring">Expiring</option>
                 </select>
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-end">
                   <Button
                     size="icon"
                     variant="ghost"
