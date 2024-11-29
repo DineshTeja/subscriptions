@@ -5,6 +5,13 @@ import { RocketIcon, Check, X, Trash2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { supabase } from '@/lib/supabase'
 
 type Subscription = {
@@ -196,28 +203,36 @@ export function SubscriptionTrackerClient() {
                   onChange={(e) => setNewSubscription({ ...newSubscription, price: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100 w-full sm:w-[120px]"
                 />
-                <select
+                <Select
                   value={newSubscription.billing_type}
-                  onChange={(e) => setNewSubscription({
+                  onValueChange={(value) => setNewSubscription({
                     ...newSubscription,
-                    billing_type: e.target.value as 'monthly' | 'yearly'
+                    billing_type: value as 'monthly' | 'yearly'
                   })}
-                  className="bg-zinc-900 border-zinc-700 text-zinc-100 rounded-md p-2 w-full sm:w-[120px]"
                 >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-                <select
+                  <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100 w-full sm:w-[120px]">
+                    <SelectValue placeholder="Billing" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700 text-zinc-100">
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="yearly">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
                   value={newSubscription.status}
-                  onChange={(e) => setNewSubscription({
+                  onValueChange={(value) => setNewSubscription({
                     ...newSubscription,
-                    status: e.target.value as 'active' | 'expiring'
+                    status: value as 'active' | 'expiring'
                   })}
-                  className="bg-zinc-900 border-zinc-700 text-zinc-100 rounded-md p-2 w-full sm:w-[120px]"
                 >
-                  <option value="active">Active</option>
-                  <option value="expiring">Expiring</option>
-                </select>
+                  <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100 w-full sm:w-[120px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700 text-zinc-100">
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="expiring">Expiring</SelectItem>
+                  </SelectContent>
+                </Select>
                 <div className="flex gap-2 justify-end">
                   <Button
                     size="icon"
