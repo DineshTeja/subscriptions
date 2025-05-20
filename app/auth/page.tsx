@@ -53,6 +53,30 @@ export default function AuthPage() {
         }
     }
 
+    const currentTabValue = isSignUp ? 'signup' : 'signin';
+
+    const AuthForm = (
+        <div className="space-y-4 pt-4">
+            <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-zinc-900 border-zinc-700 text-zinc-100"
+            />
+            <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-zinc-900 border-zinc-700 text-zinc-100"
+            />
+            <Button onClick={handleAuth} className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100">
+                {isSignUp ? 'Sign Up' : 'Sign In'}
+            </Button>
+        </div>
+    );
+
     return (
         <div className="min-h-screen bg-black flex items-center justify-center p-4">
             <Card className="w-full max-w-md mx-auto bg-zinc-950 text-zinc-200 border-zinc-800">
@@ -63,31 +87,20 @@ export default function AuthPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="signin" className="w-full">
+                    <Tabs
+                        value={currentTabValue}
+                        onValueChange={(value) => setIsSignUp(value === 'signup')}
+                        className="w-full"
+                    >
                         <TabsList className="grid w-full grid-cols-2 bg-zinc-800">
-                            <TabsTrigger value="signin" onClick={() => setIsSignUp(false)} className="data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 text-zinc-400">Sign In</TabsTrigger>
-                            <TabsTrigger value="signup" onClick={() => setIsSignUp(true)} className="data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 text-zinc-400">Sign Up</TabsTrigger>
+                            <TabsTrigger value="signin" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 text-zinc-400">Sign In</TabsTrigger>
+                            <TabsTrigger value="signup" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 text-zinc-400">Sign Up</TabsTrigger>
                         </TabsList>
-                        <TabsContent value={isSignUp ? 'signup' : 'signin'}>
-                            <div className="space-y-4 pt-4">
-                                <Input
-                                    type="email"
-                                    placeholder="Email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="bg-zinc-900 border-zinc-700 text-zinc-100"
-                                />
-                                <Input
-                                    type="password"
-                                    placeholder="Password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="bg-zinc-900 border-zinc-700 text-zinc-100"
-                                />
-                                <Button onClick={handleAuth} className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100">
-                                    {isSignUp ? 'Sign Up' : 'Sign In'}
-                                </Button>
-                            </div>
+                        <TabsContent value="signin">
+                            {AuthForm}
+                        </TabsContent>
+                        <TabsContent value="signup">
+                            {AuthForm}
                         </TabsContent>
                     </Tabs>
                     <p className="mt-4 text-center text-sm text-zinc-500">

@@ -151,11 +151,16 @@ export function SubscriptionTrackerClient() {
   }
 
   const toggleStatus = async (subscription: Subscription) => {
+    if (!user) {
+      console.error('User not found')
+      return
+    }
     const newStatus = subscription.status === 'active' ? 'expiring' : 'active'
     const { error } = await supabase
       .from('subscriptions')
       .update({ status: newStatus })
       .eq('id', subscription.id)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('Error updating subscription:', error)
