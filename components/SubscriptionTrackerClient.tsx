@@ -355,7 +355,7 @@ export function SubscriptionTrackerClient() {
                         : 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50'
                         }`}
                     >
-                      {sub.status}
+                       {sub.status}
                     </button>
                   </div>
                 </div>
