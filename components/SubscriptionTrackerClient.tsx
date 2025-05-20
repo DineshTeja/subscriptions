@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { RocketIcon, Check, X, Trash2 } from 'lucide-react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useRouter } from 'next/navigation'
+import { User } from '@supabase/supabase-js'
+import { RocketIcon, Check, X, Trash2, LogOut } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,11 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { supabase } from '@/lib/supabase'
 
 type Account = {
   id: string
   name: string
+  user_id: string
 }
 
 type Subscription = {
@@ -26,9 +29,11 @@ type Subscription = {
   billing_type: 'monthly' | 'yearly'
   status: 'active' | 'expiring'
   account: string
+  user_id: string
 }
 
 export function SubscriptionTrackerClient() {
+  const [user, setUser] = useState<User | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [newSubscription, setNewSubscription] = useState({
     name: '',
@@ -42,15 +47,34 @@ export function SubscriptionTrackerClient() {
   const [isAddingAccount, setIsAddingAccount] = useState(false)
   const [newAccountName, setNewAccountName] = useState('')
 
+  const supabase = createClientComponentClient()
+  const router = useRouter()
+
   useEffect(() => {
-    fetchAccounts()
-    fetchSubscriptions()
-  }, [])
+    async function getUser() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/auth')
+      } else {
+        setUser(session.user)
+      }
+    }
+    getUser()
+  }, [supabase, router])
+
+  useEffect(() => {
+    if (user) {
+      fetchAccounts()
+      fetchSubscriptions()
+    }
+  }, [user])
 
   async function fetchAccounts() {
+    if (!user) return
     const { data, error } = await supabase
       .from('accounts')
       .select('*')
+      .eq('user_id', user.id)
       .order('name')
 
     if (error) {
@@ -61,6 +85,7 @@ export function SubscriptionTrackerClient() {
   }
 
   async function fetchSubscriptions() {
+    if (!user) return
     const { data, error } = await supabase
       .from('subscriptions')
       .select(`
@@ -70,6 +95,7 @@ export function SubscriptionTrackerClient() {
           name
         )
       `)
+      .eq('user_id', user.id)
       .order('status', { ascending: false })
       .order('billing_type')
       .order('name')
@@ -94,7 +120,7 @@ export function SubscriptionTrackerClient() {
   const annualTotal = (totals.monthly * 12) + totals.yearly
 
   const handleAddSubscription = async () => {
-    if (newSubscription.name && newSubscription.price && newSubscription.account) {
+    if (newSubscription.name && newSubscription.price && newSubscription.account && user) {
       const { error } = await supabase
         .from('subscriptions')
         .insert([
@@ -103,7 +129,8 @@ export function SubscriptionTrackerClient() {
             price: parseFloat(newSubscription.price),
             billing_type: newSubscription.billing_type,
             status: newSubscription.status,
-            account: newSubscription.account
+            account: newSubscription.account,
+            user_id: user.id
           }
         ])
 
@@ -160,15 +187,15 @@ export function SubscriptionTrackerClient() {
   }
 
   const handleAddAccount = async () => {
-    if (!newAccountName.trim()) return
+    if (!newAccountName.trim() || !user) return
 
     const { data, error } = await supabase
       .from('accounts')
-      .insert([{ name: newAccountName }])
+      .insert([{ name: newAccountName, user_id: user.id }])
       .select()
 
     if (error) {
-      console.error('Error adding account:', error)
+      console.error('Error adding account:', error.message)
     } else {
       setAccounts([...accounts, data[0]])
       setNewAccountName('')
@@ -179,9 +206,12 @@ export function SubscriptionTrackerClient() {
   const cycleAccountForSubscription = async (subscription: Subscription) => {
     if (accounts.length === 0) return
 
-    const currentIndex = accounts.findIndex(a => a.id === subscription.account)
-    const nextIndex = (currentIndex + 1) % accounts.length
-    const nextAccount = accounts[nextIndex]
+    const filteredAccounts = accounts.filter(a => a.user_id === user?.id)
+    if (filteredAccounts.length === 0) return
+
+    const currentIndex = filteredAccounts.findIndex(a => a.id === subscription.account)
+    const nextIndex = (currentIndex + 1) % filteredAccounts.length
+    const nextAccount = filteredAccounts[nextIndex]
 
     const { error } = await supabase
       .from('subscriptions')
@@ -199,11 +229,37 @@ export function SubscriptionTrackerClient() {
     }
   }
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/auth')
+    router.refresh()
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <p className="text-zinc-400">Loading...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl mx-auto bg-zinc-950 text-zinc-200 border-zinc-800 h-[90vh] max-h-[800px] flex flex-col">
-        <CardHeader className="border-b border-zinc-800">
+        <CardHeader className="border-b border-zinc-800 flex flex-row justify-between items-center">
           <CardTitle className="text-xl text-zinc-100">subscriptions</CardTitle>
+          <div className="flex items-center gap-2">
+            {user && <span className="text-sm text-zinc-400 hidden sm:inline">{user.email}</span>}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="h-8 w-8 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100"
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 overflow-hidden">
           <div className="grid grid-cols-2 sm:grid-cols-3 justify-between gap-6 sm:gap-4 pt-8 pb-6 sm:pb-10">
@@ -290,8 +346,8 @@ export function SubscriptionTrackerClient() {
                     <button
                       onClick={() => toggleStatus(sub)}
                       className={`text-xs px-2 py-1 rounded-full transition-colors ${sub.status === 'active'
-                          ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50'
-                          : 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50'
+                        ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50'
+                        : 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50'
                         }`}
                     >
                       {sub.status}
